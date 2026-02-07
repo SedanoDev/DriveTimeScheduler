@@ -1,0 +1,3 @@
+<div>
+    {{-- Mock View --}}
+</div>
