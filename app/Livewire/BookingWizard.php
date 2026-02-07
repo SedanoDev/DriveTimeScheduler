@@ -49,9 +49,98 @@ class BookingWizard extends Component
         // 2. Existing Bookings (instructor & vehicle)
         // 3. Vehicle availability matching the class type
 
-        // This is a simplified mock implementation
         $this->availableSlots = [];
-        // Real implementation would iterate 8am-8pm, check availability, etc.
+
+        if (!$this->selectedDate || !$this->selectedInstructorId) {
+            return;
+        }
+
+        $date = Carbon::parse($this->selectedDate);
+        $dayOfWeek = $date->dayOfWeek; // 0 (Sunday) - 6 (Saturday)
+
+        // 1. Instructor Availability
+        $availabilities = InstructorAvailability::where('instructor_id', $this->selectedInstructorId)
+            ->where('day_of_week', $dayOfWeek)
+            ->orderBy('start_time')
+            ->get();
+
+        if ($availabilities->isEmpty()) {
+            return;
+        }
+
+        // 2. Instructor Bookings (Eager Load)
+        $dayStart = $date->copy()->startOfDay();
+        $dayEnd = $date->copy()->endOfDay();
+
+        $instructorBookings = Booking::where('instructor_id', $this->selectedInstructorId)
+            ->where('start_at', '<', $dayEnd)
+            ->where('end_at', '>', $dayStart)
+            ->whereIn('status', [Booking::STATUS_CONFIRMED, Booking::STATUS_CHECK_IN])
+            ->get();
+
+        // 3. Vehicles & Their Bookings (Eager Load)
+        $vehicles = Vehicle::where('type', $this->selectedClassType)
+                           ->where('status', 'active')
+                           ->get();
+
+        if ($vehicles->isEmpty()) {
+            return;
+        }
+
+        $vehicleIds = $vehicles->pluck('id');
+        $vehicleBookings = Booking::whereIn('vehicle_id', $vehicleIds)
+            ->where('start_at', '<', $dayEnd)
+            ->where('end_at', '>', $dayStart)
+            ->whereIn('status', [Booking::STATUS_CONFIRMED, Booking::STATUS_CHECK_IN])
+            ->get()
+            ->groupBy('vehicle_id');
+
+        foreach ($availabilities as $availability) {
+            $start = Carbon::parse($this->selectedDate . ' ' . $availability->start_time);
+            $end = Carbon::parse($this->selectedDate . ' ' . $availability->end_time);
+
+            // Iterate in 1-hour slots
+            $slotStart = $start->copy();
+            while ($slotStart->lt($end)) {
+                $slotEnd = $slotStart->copy()->addHour();
+
+                if ($slotEnd->gt($end)) {
+                    break;
+                }
+
+                // Check Instructor Overlap in Memory
+                $isInstructorBooked = $instructorBookings->contains(function ($booking) use ($slotStart, $slotEnd) {
+                    return $booking->start_at < $slotEnd && $booking->end_at > $slotStart;
+                });
+
+                if (!$isInstructorBooked) {
+                    // Check Vehicle Availability
+                    $availableVehicle = false;
+                    foreach ($vehicles as $vehicle) {
+                        $bookings = $vehicleBookings->get($vehicle->id, collect());
+
+                        $isVehicleBooked = $bookings->contains(function ($booking) use ($slotStart, $slotEnd) {
+                             return $booking->start_at < $slotEnd && $booking->end_at > $slotStart;
+                        });
+
+                        if (!$isVehicleBooked) {
+                            $availableVehicle = true;
+                            break;
+                        }
+                    }
+
+                    if ($availableVehicle) {
+                        $this->availableSlots[] = [
+                            'start' => $slotStart->format('H:i'),
+                            'end' => $slotEnd->format('H:i'),
+                            'instructor_id' => $this->selectedInstructorId,
+                        ];
+                    }
+                }
+
+                $slotStart->addHour();
+            }
+        }
     }
 
     public function selectSlot($slotId)
