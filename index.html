@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Portafolio - Ampliación de Fundamentos del Hardware</title>
+
+<style>
+  /* Variables de color */
+  :root {
+    --color-primario: #005a9c;
+    --color-secundario: #007bff;
+    --color-fondo: #f4f7f6;
+    --color-tarjeta: #ffffff;
+    --color-texto: #333333;
+    --color-texto-claro: #555555;
+    --sombra: rgba(0, 0, 0, 0.08);
+    --borde-radio: 10px;
+    --trans-duracion: 0.3s;
+    --font-primary: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  /* Reset */
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+  body, h1, h2, p, a {
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    font-family: var(--font-primary);
+    line-height: 1.7;
+    background-color: var(--color-fondo);
+    color: var(--color-texto);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Header */
+  .header {
+    background: linear-gradient(135deg, var(--color-primario) 0%, #003d6b 100%);
+    color: #f0f5fa;
+    padding: 3rem 1.5rem 4rem;
+    text-align: center;
+    box-shadow: 0 4px 10px var(--sombra);
+  }
+  .header h1 {
+    font-size: 2.75rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    margin-bottom: 0.3rem;
+    text-shadow: 1px 1px 4px rgba(0,0,0,0.25);
+  }
+  .header p {
+    font-size: 1.25rem;
+    font-weight: 400;
+    opacity: 0.85;
+  }
+  .header p strong {
+    color: #d0e4ff;
+  }
+
+  /* Main Container */
+  .main-container {
+    max-width: 1200px;
+    margin: -3rem auto 3rem; /* para subir un poco las tarjetas */
+    padding: 0 1.5rem;
+    flex-grow: 1;
+  }
+
+  /* Grid portfolio */
+  .portfolio-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 2.5rem;
+  }
+
+  /* Card */
+  .project-card {
+    background-color: var(--color-tarjeta);
+    border-radius: var(--borde-radio);
+    box-shadow: 0 8px 20px var(--sombra);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: transform var(--trans-duracion) ease, box-shadow var(--trans-duracion) ease;
+  }
+  .project-card:hover,
+  .project-card:focus-within {
+    transform: translateY(-7px);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+  }
+
+  /* Card Content */
+  .card-content {
+    padding: 2rem 2rem 2.5rem;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+  }
+
+  /* Titles with icon */
+  .project-card h2 {
+    font-size: 1.6rem;
+    color: var(--color-primario);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 700;
+  }
+  .project-card h2 svg {
+    width: 26px;
+    height: 26px;
+    fill: var(--color-primario);
+    flex-shrink: 0;
+  }
+
+  /* Tags */
+  .project-tags {
+    margin-bottom: 1.2rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .tag {
+    background-color: #e6f2ff;
+    color: var(--color-primario);
+    padding: 5px 14px;
+    border-radius: 16px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    user-select: none;
+    transition: background-color 0.3s ease;
+  }
+  .tag:hover {
+    background-color: #c4dfff;
+  }
+
+  /* Description */
+  .project-card p {
+    font-size: 1rem;
+    color: var(--color-texto-claro);
+    margin-bottom: 2rem;
+    flex-grow: 1;
+    line-height: 1.5;
+  }
+
+  /* Link Button */
+  .project-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background-color: var(--color-secundario);
+    color: #fff;
+    padding: 0.85rem 1.75rem;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 1rem;
+    text-decoration: none;
+    user-select: none;
+    transition: background-color var(--trans-duracion) ease, transform 0.15s ease;
+    box-shadow: 0 3px 8px rgba(0, 123, 255, 0.4);
+    position: relative;
+    overflow: hidden;
+  }
+  .project-link svg {
+    width: 20px;
+    height: 20px;
+    fill: #fff;
+    flex-shrink: 0;
+  }
+  .project-link:hover,
+  .project-link:focus {
+    background-color: #004a99;
+    transform: scale(1.05);
+    box-shadow: 0 6px 14px rgba(0, 75, 153, 0.6);
+    outline: none;
+  }
+  .project-link:focus-visible {
+    outline: 3px solid #80bfff;
+    outline-offset: 3px;
+  }
+
+  /* Ripple effect */
+  .project-link::after {
+    content: "";
+    position: absolute;
+    border-radius: 50%;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    background: rgba(255, 255, 255, 0.3);
+    opacity: 0;
+    transform: scale(0);
+    transition: transform 0.3s ease, opacity 0.5s ease;
+  }
+  .project-link:active::after {
+    opacity: 1;
+    transform: scale(1);
+    transition: 0s;
+  }
+
+  /* Footer */
+  .footer {
+    text-align: center;
+    padding: 2rem 1.5rem;
+    margin-top: auto;
+    border-top: 1px solid #d4d4d4;
+    color: #777;
+    font-size: 0.95rem;
+    background: #fafafa;
+  }
+  .footer p + p {
+    margin-top: 0.4rem;
+  }
+
+  /* Responsive tweaks */
+  @media (max-width: 600px) {
+    .header h1 {
+      font-size: 2rem;
+    }
+    .header p {
+      font-size: 1rem;
+    }
+    .portfolio-grid {
+      grid-template-columns: 1fr;
+      gap: 1.8rem;
+    }
+  }
+</style>
+
+</head>
+<body>
+
+<header class="header" role="banner">
+  <h1>Mi Portafolio de Proyectos</h1>
+  <p>Ampliación de Fundamentos del Hardware</p>
+  <p>Por: <strong>Luis Antonio Sedano Wharton</strong></p>
+</header>
+
+<main class="main-container" role="main">
+  <div class="portfolio-grid" aria-label="Lista de proyectos">
+
+    <article class="project-card" tabindex="0">
+      <div class="card-content">
+        <h2>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M20 18c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2H0v2h24v-2h-4zM4 6h16v10H4V6z"></path>
+          </svg>
+          Trabajo 1: Desmontar y Montar un PC
+        </h2>
+
+        <div class="project-tags">
+          <span class="tag">Hardware</span>
+          <span class="tag">Ensamblaje</span>
+          <span class="tag">Taller</span>
+        </div>
+
+        <p>
+          Informe detallado del proceso de ensamblaje y desensamblaje de un PC de sobremesa.
+          Incluye la identificación de componentes (CPU, RAM, placa base),
+          procedimientos de seguridad antiestática y gestión de cableado.
+        </p>
+
+        <a href="https://sedanodev.github.io/2asirAFH2526/trabajos/Desmontar%20y%20Montar%20un%20PC%20-%20Luis%20Sedano.pdf" class="project-link" target="_blank" rel="noopener noreferrer" aria-label="Ver Proyecto Trabajo 1: Desmontar y Montar un PC">
+          Ver Proyecto
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M19 19H5V5h7V3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"></path>
+          </svg>
+        </a>
+      </div>
+    </article>
+
+    <article class="project-card" tabindex="0">
+      <div class="card-content">
+        <h2>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M3 4c0-1.1.9-2 2-2h14c1.1 0 2 .9 2 2v4c0 1.1-.9 2-2 2H5c-1.1 0-2-.9-2-2V4zm2 4h14V4H5v4zM3 14c0-1.1.9-2 2-2h14c1.1 0 2 .9 2 2v4c0 1.1-.9 2-2 2H5c-1.1 0-2-.9-2-2v-4zm2 4h14v-4H5v4z"></path>
+          </svg>
+          Trabajo 2: Desmontar y Montar un Servidor
+        </h2>
+
+        <div class="project-tags">
+          <span class="tag">Hardware</span>
+          <span class="tag">Servidores</span>
+          <span class="tag">RAID</span>
+        </div>
+
+        <p>
+          Análisis y procedimiento de montaje de un servidor en formato rack. Se centra en
+          las diferencias con un PC, como fuentes redundantes, controladoras RAID
+          y la instalación de componentes <em>hot-swap</em>.
+        </p>
+
+        <a href="https://sedanodev.github.io/2asirAFH2526/trabajos/Desmontar%20y%20Montar%20un%20Servidor%20-%20Luis%20Sedano.pdf" class="project-link" target="_blank" rel="noopener noreferrer" aria-label="Ver Proyecto Trabajo 2: Desmontar y Montar un Servidor">
+          Ver Proyecto
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M19 19H5V5h7V3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"></path>
+          </svg>
+        </a>
+      </div>
+    </article>
+
+    <article class="project-card" tabindex="0">
+      <div class="card-content">
+        <h2>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M15 9H9v6h6V9zm-2 4h-2v-2h2v2zm8-2V9h-2V7h-2v2h-2v2h2v2h2v-2h2zm-4 6h-2v2h-2v-2H9v-2h2v-2h2v2h2v2zM7 7H5v2H3V7H1v2h2v2H1v2h2v-2h2v2h2V9H7V7z"></path>
+          </svg>
+          Trabajo 3: Montar un servidor de IA
+        </h2>
+
+        <div class="project-tags">
+          <span class="tag">Presupuesto</span>
+          <span class="tag">Servidores</span>
+          <span class="tag">IA</span>
+          <span class="tag">GPU</span>
+        </div>
+
+        <p>
+          Propuesta de presupuesto y selección de componentes para un servidor optimizado
+          para cargas de trabajo de <em>Deep Learning</em>, con énfasis en GPUs, almacenamiento
+          NVMe y ancho de banda PCIe.
+        </p>
+
+        <a href="URL_AL_TRABAJO_3.pdf" class="project-link" target="_blank" rel="noopener noreferrer" aria-label="Ver Proyecto Trabajo 3: Montar un servidor de IA">
+          Ver Proyecto
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M19 19H5V5h7V3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"></path>
+          </svg>
+        </a>
+      </div>
+    </article>
+
+    <article class="project-card" tabindex="0">
+      <div class="card-content">
+        <h2>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M15 9H9v6h6V9zm-2 4h-2v-2h2v2zm8-2V9h-2V7h-2v2h-2v2h2v2h2v-2h2zm-4 6h-2v2h-2v-2H9v-2h2v-2h2v2h2v2zM7 7H5v2H3V7H1v2h2v2H1v2h2v-2h2v2h2V9H7V7z"></path>
+          </svg>
+          Trabajo 4: Crear una web estática en Github
+        </h2>
+
+        <div class="project-tags">
+          <span class="tag">HTML</span>
+          <span class="tag">CSS</span>
+          <span class="tag">GitHub Pages</span>
+          <span class="tag">Git</span>
+        </div>
+
+        <p>
+          Desarrollo de este mismo portafolio web estático. Se utilizó HTML5 semántico
+          y CSS moderno (con variables y grid) para su maquetación, y se desplegó
+          gratuitamente usando GitHub Pages.
+        </p>
+
+        <a href="https://github.com/sedanodev/2asirAFH2526" class="project-link" target="_blank" rel="noopener noreferrer" aria-label="Ver el repositorio del Trabajo 4">
+          Ver Repositorio
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M19 19H5V5h7V3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"></path>
+          </svg>
+        </a>
+      </div>
+    </article>
+
+    </div> </main>
+
+<footer class="footer" role="contentinfo">
+  <p>&copy; 2025 Luis Antonio Sedano Wharton.</p>
+  <p>Portafolio para la asignatura de Ampliación de Fundamentos del Hardware.</p>
+</footer>
+
+</body>
+</html>
