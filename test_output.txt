@@ -1,0 +1,11 @@
+PHPUnit 10.5.63 by Sebastian Bergmann and contributors.
+
+Runtime:       PHP 8.3.6
+Configuration: /app/phpunit.xml
+Random Seed:   1770484805
+
+...                                                                 3 / 3 (100%)
+
+Time: 00:00.319, Memory: 28.00 MB
+
+OK (3 tests, 10 assertions)
