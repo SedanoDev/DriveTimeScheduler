@@ -9,6 +9,7 @@ use App\Models\Vehicle;
 use App\Models\InstructorAvailability;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 use Illuminate\Support\Str;
 
@@ -71,7 +72,7 @@ class BookingWizard extends Component
             // Create a DRAFT record in DB if needed for strict auditing
             // or just rely on Cache lock for the wizard session
         } else {
-            $this->addError('slot', 'This slot was just taken by another student.');
+            $this->addError('slot', 'Oops! Someone just grabbed that time slot. Please choose another one.');
             $this->loadSlots(); // Refresh
         }
     }
@@ -82,16 +83,17 @@ class BookingWizard extends Component
             return;
         }
 
+        // Fail fast: Check credits before starting transaction
+        $student = auth()->user();
+        if ($student->credits < 1) {
+            $this->addError('booking', "You don't have enough credits to book this class. Please purchase a credit pack.");
+            return;
+        }
+
         DB::beginTransaction();
         try {
             // 1. Re-validate availability (Double check DB)
             // SELECT ... FOR UPDATE to prevent race conditions at DB level
-
-            // Check User Credits
-            $student = auth()->user();
-            if ($student->credits < 1) {
-                throw new \Exception("Insufficient credits.");
-            }
 
             // Create Booking
             $booking = Booking::create([
@@ -119,7 +121,8 @@ class BookingWizard extends Component
 
         } catch (\Exception $e) {
             DB::rollBack();
-            $this->addError('booking', $e->getMessage());
+            Log::error("Booking failed: " . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            $this->addError('booking', 'We encountered an issue processing your booking. Please try again or contact support.');
         }
     }
 
