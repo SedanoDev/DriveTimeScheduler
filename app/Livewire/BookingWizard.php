@@ -79,6 +79,7 @@ class BookingWizard extends Component
     public function confirmBooking()
     {
         if (!$this->selectedSlot || !$this->bookingLockToken) {
+            $this->addError('booking', 'Your reservation session has expired. Please select a slot again.');
             return;
         }
 
@@ -90,7 +91,8 @@ class BookingWizard extends Component
             // Check User Credits
             $student = auth()->user();
             if ($student->credits < 1) {
-                throw new \Exception("Insufficient credits.");
+                // More helpful message for the user
+                throw new \Exception("You don't have enough credits to book this class. Please purchase more.");
             }
 
             // Create Booking
