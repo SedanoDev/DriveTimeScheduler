@@ -71,7 +71,7 @@ class BookingWizard extends Component
             // Create a DRAFT record in DB if needed for strict auditing
             // or just rely on Cache lock for the wizard session
         } else {
-            $this->addError('slot', 'This slot was just taken by another student.');
+            $this->addError('slot', 'Oh no! Someone just grabbed that slot. Please choose another time.');
             $this->loadSlots(); // Refresh
         }
     }
@@ -79,6 +79,7 @@ class BookingWizard extends Component
     public function confirmBooking()
     {
         if (!$this->selectedSlot || !$this->bookingLockToken) {
+            $this->addError('slot', 'Please select a time slot to continue.');
             return;
         }
 
@@ -90,7 +91,7 @@ class BookingWizard extends Component
             // Check User Credits
             $student = auth()->user();
             if ($student->credits < 1) {
-                throw new \Exception("Insufficient credits.");
+                throw new \Exception("You need at least 1 credit to book a lesson. Please purchase more credits.");
             }
 
             // Create Booking
