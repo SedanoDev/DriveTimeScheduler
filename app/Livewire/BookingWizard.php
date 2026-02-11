@@ -14,6 +14,8 @@ use Illuminate\Support\Str;
 
 class BookingWizard extends Component
 {
+    const ERROR_MSG_NO_CREDITS = 'You have 0 credits. Please purchase more credits to book a lesson.';
+
     // Filters
     public $selectedDate;
     public $selectedInstructorId;
@@ -32,6 +34,10 @@ class BookingWizard extends Component
         $this->selectedDate = Carbon::today()->format('Y-m-d');
         // Load instructors for the dropdown
         $this->instructors = User::where('role', 'instructor')->get();
+
+        if (auth()->check() && auth()->user()->credits < 1) {
+            $this->addError('booking', self::ERROR_MSG_NO_CREDITS);
+        }
     }
 
     public function updated($propertyName)
@@ -56,6 +62,11 @@ class BookingWizard extends Component
 
     public function selectSlot($slotId)
     {
+        if (auth()->check() && auth()->user()->credits < 1) {
+            $this->addError('booking', self::ERROR_MSG_NO_CREDITS);
+            return;
+        }
+
         // $slotId would contain encoded info: start|end|instructor_id
         // Parse slot
         // ...
@@ -90,7 +101,7 @@ class BookingWizard extends Component
             // Check User Credits
             $student = auth()->user();
             if ($student->credits < 1) {
-                throw new \Exception("Insufficient credits.");
+                throw new \Exception(self::ERROR_MSG_NO_CREDITS);
             }
 
             // Create Booking
