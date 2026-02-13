@@ -14,6 +14,10 @@ use Illuminate\Support\Str;
 
 class BookingWizard extends Component
 {
+    const ERROR_NO_CREDITS = 'You do not have enough credits to book a lesson. Please purchase more credits to continue.';
+    const ERROR_SLOT_TAKEN = 'This time slot is no longer available. Please choose another time.';
+    const ERROR_GENERIC = 'We could not complete your booking. Please try again or contact support.';
+
     // Filters
     public $selectedDate;
     public $selectedInstructorId;
@@ -29,6 +33,11 @@ class BookingWizard extends Component
 
     public function mount()
     {
+        // Fail-fast validation
+        if (auth()->check() && auth()->user()->credits < 1) {
+            $this->addError('booking', self::ERROR_NO_CREDITS);
+        }
+
         $this->selectedDate = Carbon::today()->format('Y-m-d');
         // Load instructors for the dropdown
         $this->instructors = User::where('role', 'instructor')->get();
@@ -56,6 +65,12 @@ class BookingWizard extends Component
 
     public function selectSlot($slotId)
     {
+        // Fail-fast validation
+        if (auth()->check() && auth()->user()->credits < 1) {
+            $this->addError('booking', self::ERROR_NO_CREDITS);
+            return;
+        }
+
         // $slotId would contain encoded info: start|end|instructor_id
         // Parse slot
         // ...
@@ -71,7 +86,7 @@ class BookingWizard extends Component
             // Create a DRAFT record in DB if needed for strict auditing
             // or just rely on Cache lock for the wizard session
         } else {
-            $this->addError('slot', 'This slot was just taken by another student.');
+            $this->addError('booking', self::ERROR_SLOT_TAKEN);
             $this->loadSlots(); // Refresh
         }
     }
@@ -119,7 +134,12 @@ class BookingWizard extends Component
 
         } catch (\Exception $e) {
             DB::rollBack();
-            $this->addError('booking', $e->getMessage());
+
+            if ($e->getMessage() === 'Insufficient credits.') {
+                $this->addError('booking', self::ERROR_NO_CREDITS);
+            } else {
+                $this->addError('booking', self::ERROR_GENERIC);
+            }
         }
     }
 
