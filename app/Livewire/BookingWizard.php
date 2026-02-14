@@ -24,11 +24,18 @@ class BookingWizard extends Component
     public $selectedSlot = null; // {start, end, instructor_id, vehicle_id}
     public $bookingLockToken = null;
 
+    const ERROR_MSG_INSUFFICIENT_CREDITS = 'You do not have enough credits to make a booking. Please purchase a package to continue.';
+    const ERROR_MSG_SLOT_TAKEN = 'This slot was just taken by another student. Please choose another time.';
+
     // Computed properties for UI
     public $instructors;
 
     public function mount()
     {
+        if (auth()->check() && auth()->user()->credits < 1) {
+            $this->addError('booking', self::ERROR_MSG_INSUFFICIENT_CREDITS);
+        }
+
         $this->selectedDate = Carbon::today()->format('Y-m-d');
         // Load instructors for the dropdown
         $this->instructors = User::where('role', 'instructor')->get();
@@ -71,7 +78,7 @@ class BookingWizard extends Component
             // Create a DRAFT record in DB if needed for strict auditing
             // or just rely on Cache lock for the wizard session
         } else {
-            $this->addError('slot', 'This slot was just taken by another student.');
+            $this->addError('slot', self::ERROR_MSG_SLOT_TAKEN);
             $this->loadSlots(); // Refresh
         }
     }
@@ -90,7 +97,7 @@ class BookingWizard extends Component
             // Check User Credits
             $student = auth()->user();
             if ($student->credits < 1) {
-                throw new \Exception("Insufficient credits.");
+                throw new \Exception(self::ERROR_MSG_INSUFFICIENT_CREDITS);
             }
 
             // Create Booking
