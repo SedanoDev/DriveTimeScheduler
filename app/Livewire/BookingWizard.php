@@ -14,6 +14,9 @@ use Illuminate\Support\Str;
 
 class BookingWizard extends Component
 {
+    const ERROR_NO_CREDITS = "You don't have enough credits to book a lesson. Please purchase more credits.";
+    const ERROR_SLOT_TAKEN = "This time slot is no longer available. Please choose another.";
+
     // Filters
     public $selectedDate;
     public $selectedInstructorId;
@@ -56,6 +59,12 @@ class BookingWizard extends Component
 
     public function selectSlot($slotId)
     {
+        // Fail fast if insufficient credits
+        if (optional(auth()->user())->credits < 1) {
+            $this->addError('booking', self::ERROR_NO_CREDITS);
+            return;
+        }
+
         // $slotId would contain encoded info: start|end|instructor_id
         // Parse slot
         // ...
@@ -71,7 +80,7 @@ class BookingWizard extends Component
             // Create a DRAFT record in DB if needed for strict auditing
             // or just rely on Cache lock for the wizard session
         } else {
-            $this->addError('slot', 'This slot was just taken by another student.');
+            $this->addError('slot', self::ERROR_SLOT_TAKEN);
             $this->loadSlots(); // Refresh
         }
     }
@@ -90,7 +99,7 @@ class BookingWizard extends Component
             // Check User Credits
             $student = auth()->user();
             if ($student->credits < 1) {
-                throw new \Exception("Insufficient credits.");
+                throw new \Exception(self::ERROR_NO_CREDITS);
             }
 
             // Create Booking
