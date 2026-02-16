@@ -32,6 +32,10 @@ class BookingWizard extends Component
         $this->selectedDate = Carbon::today()->format('Y-m-d');
         // Load instructors for the dropdown
         $this->instructors = User::where('role', 'instructor')->get();
+
+        if (optional(auth()->user())->credits < 1) {
+            $this->addError('booking', 'You have 0 credits. Please purchase more credits to book a lesson.');
+        }
     }
 
     public function updated($propertyName)
@@ -56,23 +60,32 @@ class BookingWizard extends Component
 
     public function selectSlot($slotId)
     {
-        // $slotId would contain encoded info: start|end|instructor_id
-        // Parse slot
-        // ...
+        if (optional(auth()->user())->credits < 1) {
+            $this->addError('booking', 'You need at least 1 credit to select a slot.');
+            return;
+        }
 
-        // 1. Attempt to acquire a lock (Redis/Cache)
-        $lockKey = "booking_lock:{$this->selectedDate}:{$this->selectedInstructorId}:{$start_time}";
-        $token = Str::random(16);
+        try {
+            // $slotId would contain encoded info: start|end|instructor_id
+            // Parse slot
+            // ...
 
-        if (Cache::add($lockKey, $token, 300)) { // Lock for 5 mins
-            $this->bookingLockToken = $token;
-            $this->selectedSlot = $slotData; // populate with details
+            // 1. Attempt to acquire a lock (Redis/Cache)
+            $lockKey = "booking_lock:{$this->selectedDate}:{$this->selectedInstructorId}:{$start_time}";
+            $token = Str::random(16);
 
-            // Create a DRAFT record in DB if needed for strict auditing
-            // or just rely on Cache lock for the wizard session
-        } else {
-            $this->addError('slot', 'This slot was just taken by another student.');
-            $this->loadSlots(); // Refresh
+            if (Cache::add($lockKey, $token, 300)) { // Lock for 5 mins
+                $this->bookingLockToken = $token;
+                $this->selectedSlot = $slotData; // populate with details
+
+                // Create a DRAFT record in DB if needed for strict auditing
+                // or just rely on Cache lock for the wizard session
+            } else {
+                $this->addError('slot', 'This slot was just taken by another student.');
+                $this->loadSlots(); // Refresh
+            }
+        } catch (\Throwable $e) {
+            $this->addError('booking', 'An error occurred while selecting the slot. Please try again.');
         }
     }
 
@@ -90,7 +103,7 @@ class BookingWizard extends Component
             // Check User Credits
             $student = auth()->user();
             if ($student->credits < 1) {
-                throw new \Exception("Insufficient credits.");
+                throw new \Exception("You don't have enough credits to complete this booking. Please purchase more.");
             }
 
             // Create Booking
