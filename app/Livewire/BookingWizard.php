@@ -14,6 +14,9 @@ use Illuminate\Support\Str;
 
 class BookingWizard extends Component
 {
+    const ERROR_INSUFFICIENT_CREDITS = 'You do not have enough credits to book this lesson. Please purchase more credits.';
+    const ERROR_SESSION_EXPIRED = 'Your session has expired. Please log in again to continue.';
+
     // Filters
     public $selectedDate;
     public $selectedInstructorId;
@@ -89,8 +92,13 @@ class BookingWizard extends Component
 
             // Check User Credits
             $student = auth()->user();
+
+            if (!$student) {
+                throw new \Exception(self::ERROR_SESSION_EXPIRED);
+            }
+
             if ($student->credits < 1) {
-                throw new \Exception("Insufficient credits.");
+                throw new \Exception(self::ERROR_INSUFFICIENT_CREDITS);
             }
 
             // Create Booking
