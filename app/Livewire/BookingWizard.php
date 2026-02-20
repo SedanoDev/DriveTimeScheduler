@@ -9,6 +9,7 @@ use App\Models\Vehicle;
 use App\Models\InstructorAvailability;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 use Illuminate\Support\Str;
 
@@ -60,25 +61,36 @@ class BookingWizard extends Component
         // Parse slot
         // ...
 
-        // 1. Attempt to acquire a lock (Redis/Cache)
-        $lockKey = "booking_lock:{$this->selectedDate}:{$this->selectedInstructorId}:{$start_time}";
-        $token = Str::random(16);
+        try {
+            // 1. Attempt to acquire a lock (Redis/Cache)
+            $lockKey = "booking_lock:{$this->selectedDate}:{$this->selectedInstructorId}:{$start_time}";
+            $token = Str::random(16);
 
-        if (Cache::add($lockKey, $token, 300)) { // Lock for 5 mins
-            $this->bookingLockToken = $token;
-            $this->selectedSlot = $slotData; // populate with details
+            if (Cache::add($lockKey, $token, 300)) { // Lock for 5 mins
+                $this->bookingLockToken = $token;
+                $this->selectedSlot = $slotData; // populate with details
 
-            // Create a DRAFT record in DB if needed for strict auditing
-            // or just rely on Cache lock for the wizard session
-        } else {
-            $this->addError('slot', 'This slot was just taken by another student.');
-            $this->loadSlots(); // Refresh
+                // Create a DRAFT record in DB if needed for strict auditing
+                // or just rely on Cache lock for the wizard session
+            } else {
+                $this->addError('slot', 'This slot was just taken by another student.');
+                $this->loadSlots(); // Refresh
+            }
+        } catch (\Throwable $e) {
+            Log::error('Booking wizard selection error: ' . $e->getMessage());
+            $this->addError('slot', 'Unable to select this slot. Please try again or contact support.');
         }
     }
 
     public function confirmBooking()
     {
+        if (!auth()->check()) {
+            $this->addError('booking', 'Session expired. Please log in again.');
+            return;
+        }
+
         if (!$this->selectedSlot || !$this->bookingLockToken) {
+            $this->addError('booking', 'Please select a slot before confirming.');
             return;
         }
 
@@ -90,7 +102,9 @@ class BookingWizard extends Component
             // Check User Credits
             $student = auth()->user();
             if ($student->credits < 1) {
-                throw new \Exception("Insufficient credits.");
+                DB::rollBack();
+                $this->addError('booking', "You don't have enough credits to book this class. Please purchase more credits to continue.");
+                return;
             }
 
             // Create Booking
